@@ -113,6 +113,7 @@ ifeq ($(ENABLE_AIRCOPY),1)
 	OBJS += app/aircopy.o
 endif
 OBJS += app/app.o
+OBJS += app/aprs_tx.o
 OBJS += app/chFrScanner.o
 OBJS += app/common.o
 OBJS += app/dtmf.o
@@ -200,7 +201,7 @@ endif
 OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
-AUTHOR_STRING ?= EGZUMER
+AUTHOR_STRING ?= SQ5FOX
 # the user might not have/want git installed
 # can set own version string here (max 7 chars)
 ifneq (, $(shell $(WHERE) git))

@@ -30,6 +30,7 @@
 #include "version.h"
 
 #include "app/app.h"
+#include "app/aprs_tx.h"
 #include "app/dtmf.h"
 #include "bsp/dp32g030/gpio.h"
 #include "bsp/dp32g030/syscon.h"
@@ -111,6 +112,8 @@ void Main(void)
 #ifdef ENABLE_AM_FIX
 	AM_fix_init();
 #endif
+
+	APRS_TX_Run();
 
 	const BOOT_Mode_t  BootMode = BOOT_GetMode();
 

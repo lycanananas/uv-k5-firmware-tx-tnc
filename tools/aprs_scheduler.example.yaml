@@ -1,0 +1,27 @@
+serial:
+  port: /dev/ttyUSB0
+  baudrate: 38400
+
+qrg:
+  - "144.800"
+
+destination: APZ001
+comment_max_length: 90
+jitter_percent: 5
+startup_delay_seconds: 10
+qrg_settle_seconds: 0.25
+
+objects:
+  - sender: SQ5FOX-1
+    name: SQ5FOX-T
+    latitude: 52.246222
+    longitude: 21.124694
+    symbol_table: '\'
+    symbol: "K"
+    comment: UV-5K TNC TX Test
+
+schedules:
+  - path: WIDE1-1
+    interval_minutes: 10
+  - path: WIDE2-1
+    interval_minutes: 25
