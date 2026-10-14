@@ -23,5 +23,5 @@ objects:
 schedules:
   - path: WIDE1-1
     interval_minutes: 10
-  - path: WIDE2-1
+  - path: WIDE1-1,WIDE2-1
     interval_minutes: 25

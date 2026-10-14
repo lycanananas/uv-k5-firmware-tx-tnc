@@ -143,6 +143,16 @@ def parse_object(value: Any, index: int, comment_max_length: int) -> APRSObject:
     )
 
 
+def parse_path(value: Any, field: str) -> str:
+    if value in (None, ""):
+        return ""
+    path_text = require_string(value, field)
+    path_parts = path_text.split(",")
+    if len(path_parts) > 2:
+        raise ConfigError(f"{field} supports at most two comma-separated paths")
+    return ",".join(validate_callsign(path_part, field) for path_part in path_parts)
+
+
 def parse_config(path: Path) -> Config:
     try:
         raw = yaml.safe_load(path.read_text(encoding="ascii"))
@@ -162,8 +172,7 @@ def parse_config(path: Path) -> Config:
     schedules = []
     for index, value in enumerate(require_list(root.get("schedules"), "schedules")):
         raw_schedule = require_mapping(value, f"schedules[{index}]")
-        path_value = raw_schedule.get("path", "")
-        path = "" if path_value in (None, "") else validate_callsign(path_value, f"schedules[{index}].path")
+        path = parse_path(raw_schedule.get("path", ""), f"schedules[{index}].path")
         try:
             interval_minutes = float(raw_schedule.get("interval_minutes"))
         except (TypeError, ValueError) as error:
@@ -226,20 +235,26 @@ def jittered_delay(interval_seconds: float, jitter_percent: float) -> float:
 
 
 def run(config: Config) -> None:
-    next_due = [time.monotonic() + config.startup_delay_seconds for _ in config.schedules]
+    start_time = time.monotonic()
+    next_due = [start_time + config.startup_delay_seconds for _ in config.schedules]
     frequency_index = 0
 
     with serial.Serial(config.port, config.baudrate, timeout=1) as connection:
         logging.info("opened %s at %d baud", config.port, config.baudrate)
         while True:
+            current_time = time.monotonic()
             schedule_index = min(range(len(next_due)), key=next_due.__getitem__)
-            delay = next_due[schedule_index] - time.monotonic()
+            delay = next_due[schedule_index] - current_time
             if delay > 0:
                 time.sleep(delay)
                 continue
+            due_indexes = [index for index, due_time in enumerate(next_due) if due_time <= current_time]
+            schedule_index = max(due_indexes, key=lambda index: config.schedules[index].path.count(","))
             schedule = config.schedules[schedule_index]
             frequency_index = transmit_cycle(connection, config, schedule, frequency_index)
-            next_due[schedule_index] = time.monotonic() + jittered_delay(schedule.interval_seconds, config.jitter_percent)
+            current_time = time.monotonic()
+            for index in due_indexes:
+                next_due[index] = current_time + jittered_delay(config.schedules[index].interval_seconds, config.jitter_percent)
 
 
 def main() -> int:
